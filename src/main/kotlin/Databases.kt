@@ -24,33 +24,61 @@ fun Application.configureDatabases() {
 
     routing {
 
+        // add user
         post("/users") {
             val user = call.receive<User>()
-            val id = userService.addUser(user)
-            call.respond(HttpStatusCode.Created, id)
-        }
-
-        get("/users/{id}") {
-            val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
             try {
-                val user = userService.getUserById(id)
-                call.respond(HttpStatusCode.OK, user)
+                val id = userService.addUser(user)
+                call.respond(HttpStatusCode.Created, id)
+                log.info("Successfully added user $id")
             } catch (e: Exception) {
-                call.respond(HttpStatusCode.NotFound)
+                call.respond(HttpStatusCode.BadRequest, e.message ?: "Something went wrong")
             }
+
         }
 
+        // get user
+        get("/users/{id}") {
+            try {
+                val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
+                try {
+                    val user = userService.getUserById(id)
+                    call.respond(HttpStatusCode.OK, user)
+                    log.info("Successfully fetched user $id")
+                } catch (e: Exception) {
+                    log.error("Error getting user $id")
+                    call.respond(HttpStatusCode.NotFound)
+                }
+            } catch (e: IllegalArgumentException) {
+                call.respond(HttpStatusCode.BadRequest, e.message ?: "Something went wrong")
+            }
+
+        }
+
+        // update user
         put("/users/{id}") {
-            val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
-            val user = call.receive<User>()
-            userService.updateUser(id, user)
-            call.respond(HttpStatusCode.OK)
+            try {
+                val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
+                val user = call.receive<User>()
+                userService.updateUser(id, user)
+                call.respond(HttpStatusCode.OK)
+                log.info("Successfully updated user $id")
+            } catch (e: Exception) {
+                log.error(e.message ?: "Something went wrong")
+            }
+
         }
 
+        // delete user
         delete("/users/{id}") {
-            val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
-            userService.deleteUserById(id)
-            call.respond(HttpStatusCode.OK)
+            try {
+                val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
+                userService.deleteUserById(id)
+                call.respond(HttpStatusCode.OK)
+            } catch (e: Exception) {
+                log.error(e.message ?: "Something went wrong")
+            }
+
         }
     }
 }

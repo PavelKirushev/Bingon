@@ -36,9 +36,9 @@ class UserService(private val connection: Connection) {
                     "GENDER VARCHAR(255) NOT NULL," +
                     "DESCRIPTION VARCHAR(255))"
 
-        private const val SELECT_USER_BY_ID = "SELECT COUNT(1) FROM USERS WHERE ID = ?"
-        private const val SELECT_USER_BY_LOGIN = "SELECT COUNT(1) FROM USERS WHERE LOGIN = ?"
-        private const val INSERT_USER = "INSERT INTO USERS (LOGIN, PASSWORD, FIRSTNAME, LASTNAME, EMAIL, CITY, COUNTRY, AGE, GENDER, DESCRIPTION) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        private const val SELECT_USER_BY_ID = "SELECT * FROM USERS WHERE ID = ?"
+        private const val SELECT_USER_BY_LOGIN = "SELECT * FROM USERS WHERE LOGIN = ?"
+        private const val INSERT_USER = "INSERT INTO USERS (LOGIN, PASSWORD, FIRSTNAME, LASTNAME, EMAIL, CITY, COUNTRY, AGE, GENDER, DESCRIPTION) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         private const val UPDATE_USER = "UPDATE USERS SET LOGIN = ?, PASSWORD = ?, FIRSTNAME = ?, LASTNAME = ?, EMAIL = ?, CITY = ?, COUNTRY = ?, AGE = ?, GENDER = ?, DESCRIPTION = ? WHERE ID = ?"
         private const val DELETE_USER = "DELETE FROM USERS WHERE ID = ?"
     }
@@ -98,8 +98,8 @@ class UserService(private val connection: Connection) {
                 firstName = resultSet.getString("FIRSTNAME"),
                 lastName = resultSet.getString("LASTNAME"),
                 email = resultSet.getString("EMAIL"),
-                city = resultSet.getString("COUNTRY"),
-                country = resultSet.getString("AGE"),
+                city = resultSet.getString("CITY"),
+                country = resultSet.getString("COUNTRY"),
                 age = resultSet.getInt("AGE"),
                 gender = resultSet.getString("GENDER"),
                 description = resultSet.getString("DESCRIPTION"),

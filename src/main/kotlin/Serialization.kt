@@ -23,9 +23,12 @@ import java.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 fun Application.configureSerialization() {
-    routing {
-        get("/json/kotlinx-serialization") {
-            call.respond(mapOf("hello" to "world"))
-        }
+//    routing {
+//        get("/json/kotlinx-serialization") {
+//            call.respond(mapOf("hello" to "world"))
+//        }
+//    }
+    install(ContentNegotiation) {
+        json()
     }
 }
