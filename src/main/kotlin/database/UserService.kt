@@ -1,26 +1,12 @@
-package com.example
+package com.example.database
 
+import com.example.core.UserRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.Serializable
 import java.sql.Connection
 import java.sql.Statement
 
-@Serializable
-data class User(
-    val login: String,
-    val password: String,
-    val firstName: String,
-    val lastName: String,
-    val email: String,
-    val city: String,
-    val country: String,
-    val age: Int,
-    val gender: String,
-    val description: String,
-)
-
-class UserService(private val connection: Connection) {
+class UserService(private val connection: Connection): UserRepository {
     companion object {
         private const val CREATE_TABLE_USERS =
             "CREATE TABLE IF NOT EXISTS USERS (" +
@@ -85,7 +71,7 @@ class UserService(private val connection: Connection) {
         statement.setInt(11, id)
         statement.executeUpdate()
     }
-    
+
     suspend fun getUserById(id: Int): User = withContext(Dispatchers.IO) {
         val statement = connection.prepareStatement(SELECT_USER_BY_ID)
         statement.setInt(1, id)
@@ -110,7 +96,7 @@ class UserService(private val connection: Connection) {
         }
     }
 
-    suspend fun getUserByLogin(login: String): User = withContext(Dispatchers.IO) {
+    override suspend fun getUserByLogin(login: String): User = withContext(Dispatchers.IO) {
         val statement = connection.prepareStatement(SELECT_USER_BY_LOGIN)
         statement.setString(1, login)
         val resultSet = statement.executeQuery()
@@ -133,7 +119,7 @@ class UserService(private val connection: Connection) {
             throw Exception("User not found")
         }
     }
-    
+
     suspend fun deleteUserById(id: Int) = withContext(Dispatchers.IO) {
         val statement = connection.prepareStatement(DELETE_USER)
         statement.setInt(1, id)

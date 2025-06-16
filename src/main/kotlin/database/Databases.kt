@@ -1,4 +1,4 @@
-package com.example
+package com.example.database
 
 import io.ktor.client.*
 import io.ktor.client.engine.apache.*
@@ -18,9 +18,7 @@ import io.ktor.websocket.*
 import java.sql.Connection
 import java.sql.DriverManager
 
-fun Application.configureDatabases() {
-    val dbConnection: Connection = connectToPostgres(false)
-    val userService = UserService(dbConnection)
+fun Application.configureDatabases(userService: UserService) {
 
     routing {
 
