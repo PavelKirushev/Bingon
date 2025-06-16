@@ -37,5 +37,9 @@ fun Application.configureAuthentication(authController: AuthController) {
         post("/login") {
             authController.login(call)
         }
+        post("/register") {
+            authController.register(call)
+        }
+
     }
 }

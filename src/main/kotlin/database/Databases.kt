@@ -18,19 +18,18 @@ import io.ktor.websocket.*
 import java.sql.Connection
 import java.sql.DriverManager
 
-fun Application.configureDatabases(userService: UserService) {
+fun Application.configureDatabases(databaseRepository: DatabaseRepository) {
 
     routing {
 
         // add user
         post("/users") {
             val user = call.receive<User>()
-            try {
-                val id = userService.addUser(user)
-                call.respond(HttpStatusCode.Created, id)
-                log.info("Successfully added user $id")
-            } catch (e: Exception) {
-                call.respond(HttpStatusCode.BadRequest, e.message ?: "Something went wrong")
+            val id = databaseRepository.addUser(user)
+            if (id != null) {
+                call.respond(HttpStatusCode.Created, "Successfully added user $id")
+            } else {
+                call.respond(HttpStatusCode.BadRequest, "Something went wrong")
             }
 
         }
@@ -39,11 +38,11 @@ fun Application.configureDatabases(userService: UserService) {
         get("/users/{id}") {
             try {
                 val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
-                try {
-                    val user = userService.getUserById(id)
+                val user = databaseRepository.getUserById(id)
+                if (user == null) {
                     call.respond(HttpStatusCode.OK, user)
                     log.info("Successfully fetched user $id")
-                } catch (e: Exception) {
+                } else {
                     log.error("Error getting user $id")
                     call.respond(HttpStatusCode.NotFound)
                 }
@@ -58,7 +57,7 @@ fun Application.configureDatabases(userService: UserService) {
             try {
                 val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
                 val user = call.receive<User>()
-                userService.updateUser(id, user)
+                databaseRepository.updateUser(id, user)
                 call.respond(HttpStatusCode.OK)
                 log.info("Successfully updated user $id")
             } catch (e: Exception) {
@@ -71,7 +70,7 @@ fun Application.configureDatabases(userService: UserService) {
         delete("/users/{id}") {
             try {
                 val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
-                userService.deleteUserById(id)
+                databaseRepository.deleteUserById(id)
                 call.respond(HttpStatusCode.OK)
             } catch (e: Exception) {
                 log.error(e.message ?: "Something went wrong")

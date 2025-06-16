@@ -6,7 +6,7 @@ import kotlinx.coroutines.withContext
 import java.sql.Connection
 import java.sql.Statement
 
-class UserService(private val connection: Connection): UserRepository {
+class DatabaseRepository(private val connection: Connection): UserRepository {
     companion object {
         private const val CREATE_TABLE_USERS =
             "CREATE TABLE IF NOT EXISTS USERS (" +
@@ -34,7 +34,7 @@ class UserService(private val connection: Connection): UserRepository {
         stmt.executeUpdate(CREATE_TABLE_USERS)
     }
 
-    suspend fun addUser(user: User): Int = withContext(Dispatchers.IO) {
+    override suspend fun addUser(user: User): String? = withContext(Dispatchers.IO) {
         val statement = connection.prepareStatement(INSERT_USER, Statement.RETURN_GENERATED_KEYS)
         statement.setString(1, user.login)
         statement.setString(2, user.password)
@@ -50,9 +50,9 @@ class UserService(private val connection: Connection): UserRepository {
 
         val generatedKeys = statement.generatedKeys
         if (generatedKeys.next()) {
-            return@withContext generatedKeys.getInt(1)
+            return@withContext generatedKeys.getString(2)
         } else {
-            throw Exception("Unable to return the id of the newly added user")
+            return@withContext null
         }
     }
 
@@ -72,13 +72,14 @@ class UserService(private val connection: Connection): UserRepository {
         statement.executeUpdate()
     }
 
-    suspend fun getUserById(id: Int): User = withContext(Dispatchers.IO) {
+    suspend fun getUserById(id: Int): User? = withContext(Dispatchers.IO) {
         val statement = connection.prepareStatement(SELECT_USER_BY_ID)
         statement.setInt(1, id)
         val resultSet = statement.executeQuery()
 
         if (resultSet.next()) {
             val user = User(
+                id = resultSet.getInt("ID"),
                 login = resultSet.getString("LOGIN"),
                 password = resultSet.getString("PASSWORD"),
                 firstName = resultSet.getString("FIRSTNAME"),
@@ -92,17 +93,18 @@ class UserService(private val connection: Connection): UserRepository {
             )
             return@withContext user
         } else {
-            throw Exception("User not found")
+            return@withContext null
         }
     }
 
-    override suspend fun getUserByLogin(login: String): User = withContext(Dispatchers.IO) {
+    override suspend fun getUserByLogin(login: String): User? = withContext(Dispatchers.IO) {
         val statement = connection.prepareStatement(SELECT_USER_BY_LOGIN)
         statement.setString(1, login)
         val resultSet = statement.executeQuery()
 
         if (resultSet.next()) {
             val user = User(
+                id = resultSet.getInt("ID"),
                 login = resultSet.getString("LOGIN"),
                 password = resultSet.getString("PASSWORD"),
                 firstName = resultSet.getString("FIRSTNAME"),
@@ -116,7 +118,7 @@ class UserService(private val connection: Connection): UserRepository {
             )
             return@withContext user
         } else {
-            throw Exception("User not found")
+            return@withContext null
         }
     }
 

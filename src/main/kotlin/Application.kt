@@ -1,7 +1,6 @@
 package com.example
 
 import com.example.auth.configureAuthentication
-import com.example.database.UserService
 import com.example.database.configureDatabases
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -18,7 +17,7 @@ fun main(args: Array<String>) {
 
 fun Application.module() {
     val deps = configureDependencies()
-    configureDatabases(deps.userService)
+    configureDatabases(deps.databaseRepository)
     configureAuthentication(deps.authController)
     configureSerialization()
     configureSockets()
