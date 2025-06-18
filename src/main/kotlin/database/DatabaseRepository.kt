@@ -1,6 +1,8 @@
 package com.example.database
 
+import com.example.core.UserSchema
 import com.example.core.UserRepository
+import com.example.core.UserResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.sql.Connection
@@ -22,11 +24,10 @@ class DatabaseRepository(private val connection: Connection): UserRepository {
                     "GENDER VARCHAR(255) NOT NULL," +
                     "DESCRIPTION VARCHAR(255))"
 
-        private const val SELECT_USER_BY_ID = "SELECT * FROM USERS WHERE ID = ?"
         private const val SELECT_USER_BY_LOGIN = "SELECT * FROM USERS WHERE LOGIN = ?"
         private const val INSERT_USER = "INSERT INTO USERS (LOGIN, PASSWORD, FIRSTNAME, LASTNAME, EMAIL, CITY, COUNTRY, AGE, GENDER, DESCRIPTION) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-        private const val UPDATE_USER = "UPDATE USERS SET LOGIN = ?, PASSWORD = ?, FIRSTNAME = ?, LASTNAME = ?, EMAIL = ?, CITY = ?, COUNTRY = ?, AGE = ?, GENDER = ?, DESCRIPTION = ? WHERE ID = ?"
-        private const val DELETE_USER = "DELETE FROM USERS WHERE ID = ?"
+        private const val UPDATE_USER = "UPDATE USERS SET LOGIN = ?, PASSWORD = ?, FIRSTNAME = ?, LASTNAME = ?, EMAIL = ?, CITY = ?, COUNTRY = ?, AGE = ?, GENDER = ?, DESCRIPTION = ? WHERE LOGIN = ?"
+        private const val DELETE_USER = "DELETE FROM USERS WHERE LOGIN = ?"
     }
 
     init {
@@ -34,18 +35,18 @@ class DatabaseRepository(private val connection: Connection): UserRepository {
         stmt.executeUpdate(CREATE_TABLE_USERS)
     }
 
-    override suspend fun addUser(user: User): String? = withContext(Dispatchers.IO) {
+    override suspend fun addUser(userSchema: UserSchema): String? = withContext(Dispatchers.IO) {
         val statement = connection.prepareStatement(INSERT_USER, Statement.RETURN_GENERATED_KEYS)
-        statement.setString(1, user.login)
-        statement.setString(2, user.password)
-        statement.setString(3, user.firstName)
-        statement.setString(4, user.lastName)
-        statement.setString(5, user.email)
-        statement.setString(6, user.city)
-        statement.setString(7, user.country)
-        statement.setInt(8, user.age)
-        statement.setString(9, user.gender)
-        statement.setString(10, user.description)
+        statement.setString(1, userSchema.login)
+        statement.setString(2, userSchema.password)
+        statement.setString(3, userSchema.firstName)
+        statement.setString(4, userSchema.lastName)
+        statement.setString(5, userSchema.email)
+        statement.setString(6, userSchema.city)
+        statement.setString(7, userSchema.country)
+        statement.setInt(8, userSchema.age)
+        statement.setString(9, userSchema.gender)
+        statement.setString(10, userSchema.description)
         statement.executeUpdate()
 
         val generatedKeys = statement.generatedKeys
@@ -56,29 +57,29 @@ class DatabaseRepository(private val connection: Connection): UserRepository {
         }
     }
 
-    suspend fun updateUser(id: Int, user: User) = withContext(Dispatchers.IO) {
+    suspend fun updateUser(login: String, userSchema: UserSchema) = withContext(Dispatchers.IO) {
         val statement = connection.prepareStatement(UPDATE_USER)
-        statement.setString(1, user.login)
-        statement.setString(2, user.password)
-        statement.setString(3, user.firstName)
-        statement.setString(4, user.lastName)
-        statement.setString(5, user.email)
-        statement.setString(6, user.city)
-        statement.setString(7, user.country)
-        statement.setInt(8, user.age)
-        statement.setString(9, user.gender)
-        statement.setString(10, user.description)
-        statement.setInt(11, id)
+        statement.setString(1, userSchema.login)
+        statement.setString(2, userSchema.password)
+        statement.setString(3, userSchema.firstName)
+        statement.setString(4, userSchema.lastName)
+        statement.setString(5, userSchema.email)
+        statement.setString(6, userSchema.city)
+        statement.setString(7, userSchema.country)
+        statement.setInt(8, userSchema.age)
+        statement.setString(9, userSchema.gender)
+        statement.setString(10, userSchema.description)
+        statement.setString(11, login)
         statement.executeUpdate()
     }
 
-    suspend fun getUserById(id: Int): User? = withContext(Dispatchers.IO) {
-        val statement = connection.prepareStatement(SELECT_USER_BY_ID)
-        statement.setInt(1, id)
+    override suspend fun getUserByLogin(login: String): UserSchema? = withContext(Dispatchers.IO) {
+        val statement = connection.prepareStatement(SELECT_USER_BY_LOGIN)
+        statement.setString(1, login)
         val resultSet = statement.executeQuery()
 
         if (resultSet.next()) {
-            val user = User(
+            val userSchema = UserSchema(
                 id = resultSet.getInt("ID"),
                 login = resultSet.getString("LOGIN"),
                 password = resultSet.getString("PASSWORD"),
@@ -91,40 +92,38 @@ class DatabaseRepository(private val connection: Connection): UserRepository {
                 gender = resultSet.getString("GENDER"),
                 description = resultSet.getString("DESCRIPTION"),
             )
-            return@withContext user
+            return@withContext userSchema
         } else {
             return@withContext null
         }
     }
 
-    override suspend fun getUserByLogin(login: String): User? = withContext(Dispatchers.IO) {
+    override suspend fun getUserResponse(login: String): UserResponse? = withContext(Dispatchers.IO) {
         val statement = connection.prepareStatement(SELECT_USER_BY_LOGIN)
         statement.setString(1, login)
         val resultSet = statement.executeQuery()
 
         if (resultSet.next()) {
-            val user = User(
-                id = resultSet.getInt("ID"),
+            val userResponse = UserResponse(
                 login = resultSet.getString("LOGIN"),
-                password = resultSet.getString("PASSWORD"),
                 firstName = resultSet.getString("FIRSTNAME"),
                 lastName = resultSet.getString("LASTNAME"),
                 email = resultSet.getString("EMAIL"),
-                city = resultSet.getString("COUNTRY"),
-                country = resultSet.getString("AGE"),
+                city = resultSet.getString("CITY"),
+                country = resultSet.getString("COUNTRY"),
                 age = resultSet.getInt("AGE"),
                 gender = resultSet.getString("GENDER"),
                 description = resultSet.getString("DESCRIPTION"),
             )
-            return@withContext user
+            return@withContext userResponse
         } else {
             return@withContext null
         }
     }
 
-    suspend fun deleteUserById(id: Int) = withContext(Dispatchers.IO) {
+    suspend fun deleteUserByLogin(login: String) = withContext(Dispatchers.IO) {
         val statement = connection.prepareStatement(DELETE_USER)
-        statement.setInt(1, id)
+        statement.setString(1, login)
         statement.executeUpdate()
     }
 

@@ -6,7 +6,8 @@ import com.example.auth.passwordhasher.BCryptPasswordHasher
 import com.example.auth.refreshtoken.RefreshToken
 import com.example.auth.refreshtoken.RefreshTokenRepository
 import com.example.core.UserRepository
-import com.example.database.User
+import com.example.core.UserResponse
+import com.example.core.UserSchema
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -38,7 +39,7 @@ class AuthRepository(
             return null
         }
         val passwordHash = passwordHasher.hash(password)
-        return userRepository.addUser(User(-1, login, passwordHash, firstName, lastName, email, city, country, age, gender, description))
+        return userRepository.addUser(UserSchema(-1, login, passwordHash, firstName, lastName, email, city, country, age, gender, description))
     }
 
     suspend fun authenticate(login: String, password: String): TokenResponse? {
@@ -62,10 +63,16 @@ class AuthRepository(
         }
     }
 
-    private fun generateTokens(user: User): TokenResponse {
+    suspend fun getUser(login: String): UserResponse? {
+        val user = userRepository.getUserResponse(login) ?: return null
+        return user
+    }
+
+    private fun generateTokens(userSchema: UserSchema): TokenResponse {
         try {
             val accessToken = JWT.create()
-                .withSubject(user.login)
+                .withSubject(userSchema.login)
+                .withClaim("login", userSchema.login)
                 .withIssuer(jwtConfig.issuer)  // Добавьте issuer
                 .withAudience(jwtConfig.audience)  // Добавьте audience
                 .withExpiresAt(Date(System.currentTimeMillis() + jwtConfig.accessTokenExpiry))
@@ -77,7 +84,7 @@ class AuthRepository(
             CoroutineScope(Dispatchers.IO).launch {
                 refreshTokenRepository.save(
                     RefreshToken(
-                        userId = user.id,
+                        userId = userSchema.id,
                         token = refreshToken,
                         expiresAt = Instant.now().plusMillis(jwtConfig.accessTokenExpiry)
                     )
@@ -87,7 +94,7 @@ class AuthRepository(
 
             return TokenResponse(accessToken, refreshToken, jwtConfig.accessTokenExpiry)
         } catch (e: Exception) {
-            println("Token generation failed for ${user.login}")
+            println("Token generation failed for ${userSchema.login}")
             throw e
         }
     }

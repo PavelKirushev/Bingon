@@ -1,9 +1,9 @@
-package com.example.database
+package com.example.core
 
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class User(
+data class UserSchema(
     val id: Int,
     val login: String,
     val password: String,

@@ -4,6 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.sql.Connection
 import java.sql.Statement
+import java.sql.Timestamp
 
 class RefreshTokenRepository(private val connection: Connection) {
     companion object {
@@ -12,16 +13,15 @@ class RefreshTokenRepository(private val connection: Connection) {
                 "id SERIAL PRIMARY KEY," +
                 "user_id INT REFERENCES users(id) ON DELETE CASCADE," +
                 "token VARCHAR(255) UNIQUE NOT NULL," +
-                "expires_at TIMESTAMP NOT NULL," +
+                "expires_at TIMESTAMP WITH TIME ZONE NOT NULL," +
                 "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
             ");"
 
         private const val SELECT_TOKEN = "SELECT * FROM refresh_tokens WHERE token = ?"
-        private const val INSERT_TOKEN = "INSERT INTO refresh_tokens (user_id, token, expiresAt) VALUES (?, ?, ?)"
+        private const val INSERT_TOKEN = "INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (?, ?, ?)"
         private const val DELETE_TOKEN = "DELETE FROM refresh_tokens WHERE token = ?"
         private const val DELETE_ALL_TOKENS = "DELETE FROM refresh_tokens WHERE user_id = ?"
     }
-
     init {
         val stmt: Statement = connection.createStatement()
         stmt.executeUpdate(CREATE_TABLE_TOKENS)
@@ -31,7 +31,7 @@ class RefreshTokenRepository(private val connection: Connection) {
         val statement = connection.prepareStatement(INSERT_TOKEN)
         statement.setInt(1, token.userId)
         statement.setString(2, token.token)
-        statement.setString(2, token.expiresAt.toString())
+        statement.setTimestamp(3, Timestamp.from(token.expiresAt))
         statement.executeUpdate()
     }
 

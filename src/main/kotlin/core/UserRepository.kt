@@ -1,8 +1,7 @@
 package com.example.core
 
-import com.example.database.User
-
 interface UserRepository {
-    suspend fun getUserByLogin(login: String): User?
-    suspend fun addUser(user: User): String?
+    suspend fun getUserByLogin(login: String): UserSchema?
+    suspend fun getUserResponse(login: String): UserResponse?
+    suspend fun addUser(userSchema: UserSchema): String?
 }

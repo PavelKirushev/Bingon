@@ -6,6 +6,8 @@ import com.example.auth.models.LoginRequest
 import com.example.auth.models.RegisterRequest
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 
@@ -18,6 +20,19 @@ class AuthController(private val authRepository: AuthRepository) {
                 HttpStatusCode.Unauthorized
             )
         call.respond(tokens)
+    }
+
+    suspend fun me(call: ApplicationCall) {
+        val principal = call.principal<JWTPrincipal>()
+            ?: return call.respond(HttpStatusCode.Unauthorized, "Missing or invalid JWT token")
+
+        val login = principal.payload.getClaim("login").asString()
+            ?: return call.respond(HttpStatusCode.Unauthorized, "Token missing login claim")
+
+        val user = authRepository.getUser(login)
+            ?: return call.respond(HttpStatusCode.Unauthorized, "User not found")
+
+        call.respond(HttpStatusCode.OK, user)
     }
 
     suspend fun register(call: ApplicationCall) {

@@ -15,17 +15,21 @@ fun Application.configureAuthentication(authController: AuthController) {
         realm = environment.config.property("jwt.realm").getString(),
         accessTokenExpiry = 30 * 60 * 1000
     )
+
     install(Authentication) {
-        jwt("auth-jwt") {
+        jwt("auth") {
             realm = jwtConfig.realm
-            verifier(
-                JWT.require(Algorithm.HMAC256(jwtConfig.secret))
-                    .withIssuer(jwtConfig.issuer)
-                    .withAudience(jwtConfig.audience)
-                    .build()
+            verifier(JWT.require(Algorithm.HMAC256(jwtConfig.secret))
+                .withIssuer(jwtConfig.issuer)
+                .withAudience(jwtConfig.audience)
+                .acceptExpiresAt(5)
+                .build()
             )
             validate { credential ->
-                if (credential.payload.subject != null) {
+                val subject = credential.payload.subject
+                val login = credential.payload.getClaim("login").asString()
+
+                if (subject != null || login != null) {
                     JWTPrincipal(credential.payload)
                 } else {
                     null
@@ -39,6 +43,12 @@ fun Application.configureAuthentication(authController: AuthController) {
         }
         post("/register") {
             authController.register(call)
+        }
+
+        authenticate("auth") {
+            get("/me") {
+                authController.me(call)
+            }
         }
 
     }
